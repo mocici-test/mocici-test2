@@ -1,0 +1,1161 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOCICI 精神健身房 · 精神体质类型测评</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            light: '#E6F0FF',
+                            DEFAULT: '#4A90E2',
+                            dark: '#2C5AA0'
+                        },
+                        green: {
+                            light: '#E6F9F0',
+                            DEFAULT: '#42B883',
+                            dark: '#2A7F57'
+                        },
+                        yellow: {
+                            light: '#FFF9E6',
+                            DEFAULT: '#F2C94C',
+                            dark: '#D4A535'
+                        },
+                        purple: {
+                            light: '#F3E6FF',
+                            DEFAULT: '#9B51E0',
+                            dark: '#6C3483'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .btn-score {
+                @apply w-14 h-14 rounded-full text-lg font-medium transition-all duration-300 flex items-center justify-center;
+            }
+            .btn-score.active {
+                @apply ring-4 ring-opacity-50 transform scale-110;
+            }
+            .btn-score-0 { @apply bg-gray-100 text-gray-500; }
+            .btn-score-0.active { @apply bg-gray-200 ring-gray-300; }
+            .btn-score-1 { @apply bg-gray-100 text-gray-500; }
+            .btn-score-1.active { @apply bg-gray-200 ring-gray-300; }
+            .btn-score-2 { @apply bg-gray-100 text-gray-500; }
+            .btn-score-2.active { @apply bg-gray-200 ring-gray-300; }
+            .btn-score-3 { @apply bg-gray-100 text-gray-500; }
+            .btn-score-3.active { @apply bg-gray-200 ring-gray-300; }
+            .btn-score-4 { @apply bg-gray-100 text-gray-500; }
+            .btn-score-4.active { @apply bg-gray-200 ring-gray-300; }
+            
+            .card {
+                @apply bg-white rounded-2xl shadow-lg p-6 transition-all duration-300;
+            }
+            
+            .btn-primary {
+                @apply bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105;
+            }
+            
+            .btn-secondary {
+                @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-8 rounded-full transition-all duration-300;
+            }
+            
+            .progress-bar {
+                @apply h-2 bg-gray-100 rounded-full overflow-hidden;
+            }
+            
+            .progress-fill {
+                @apply h-full bg-gray-300 transition-all duration-300;
+            }
+            
+            .fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .slide-in {
+                animation: slideIn 0.3s ease-in-out;
+            }
+            
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateX(100%); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            
+            .pulse {
+                animation: pulse 1.5s infinite;
+            }
+            
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            .bg-blue-gradient {
+                background: linear-gradient(135deg, #E6F0FF 0%, #4A90E2 100%);
+            }
+            
+            .bg-green-gradient {
+                background: linear-gradient(135deg, #E6F9F0 0%, #42B883 100%);
+            }
+            
+            .bg-yellow-gradient {
+                background: linear-gradient(135deg, #FFF9E6 0%, #F2C94C 100%);
+            }
+            
+            .bg-purple-gradient {
+                background: linear-gradient(135deg, #F3E6FF 0%, #9B51E0 100%);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div id="app" class="min-h-screen">
+        <!-- 封面页 -->
+        <section id="cover-page" class="min-h-screen flex flex-col items-center justify-center p-6 fade-in">
+            <div class="text-center max-w-md mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold mb-4">MOCICI 精神健身房</h1>
+                <h2 class="text-xl md:text-2xl font-semibold text-gray-600 mb-6">精神体质类型测评</h2>
+                <p class="text-gray-600 mb-10">测一测你的精神体质，解锁专属人设+精神健身方案</p>
+                <button id="start-test" class="btn-primary pulse">
+                    开始测试
+                </button>
+                <p class="text-xs text-gray-400 mt-8">本量表为冥想训练自评工具，仅用于成长追踪<br>不替代专业心理/医疗诊断</p>
+            </div>
+        </section>
+
+        <!-- 答题页 -->
+        <section id="question-page" class="min-h-screen flex flex-col items-center justify-center p-6 hidden">
+            <div class="w-full max-w-md mx-auto">
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-500">问题 <span id="current-question">1</span>/24</span>
+                        <span class="text-sm text-gray-500">完成度 <span id="progress-percentage">4%</span></span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill" style="width: 4%"></div>
+                    </div>
+                </div>
+                
+                <div class="card mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="dimension-tag" class="hidden"></span>
+                    </div>
+                    <h3 id="question-text" class="text-xl font-medium mb-8 text-center">我心里一有点不爽，自己马上就能察觉到。</h3>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm text-gray-500">完全不符合</span>
+                        <span class="text-sm text-gray-500">完全符合</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-2">
+                        <button class="btn-score btn-score-0" data-score="0">0</button>
+                        <button class="btn-score btn-score-1" data-score="1">1</button>
+                        <button class="btn-score btn-score-2" data-score="2">2</button>
+                        <button class="btn-score btn-score-3" data-score="3">3</button>
+                        <button class="btn-score btn-score-4" data-score="4">4</button>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button id="prev-question" class="btn-secondary opacity-50 cursor-not-allowed" disabled="">
+                        <i class="fa fa-arrow-left mr-2"></i> 上一题
+                    </button>
+                    <button id="next-question" class="btn-primary opacity-50 cursor-not-allowed" disabled="">
+                        下一题 <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 计分页 -->
+        <section id="loading-page" class="min-h-screen flex flex-col items-center justify-center p-6 hidden">
+            <div class="text-center max-w-md mx-auto">
+                <h2 class="text-2xl font-semibold mb-8">正在计算你的精神体质...</h2>
+                <div class="w-24 h-24 border-4 border-t-gray-400 border-r-gray-300 border-b-gray-400 border-l-gray-200 rounded-full animate-spin mx-auto mb-8"></div>
+                <p class="text-gray-600">这可能需要一点时间，请耐心等待</p>
+            </div>
+        </section>
+
+        <!-- 结果页 -->
+        <section id="result-page" class="min-h-screen p-6 hidden">
+            <div class="max-w-md mx-auto">
+                <!-- 结果卡片 -->
+                <div id="result-card" class="card mb-8 fade-in">
+                    <div class="flex justify-center mb-6">
+                        <img id="personality-image" src="" alt="人格插画" class="w-48 h-48 object-contain">
+                    </div>
+                    
+                    <h2 id="personality-title" class="text-2xl font-bold text-center mb-2"></h2>
+                    <p id="personality-subtitle" class="text-lg text-center text-gray-600 mb-6"></p>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-2">精神状态</h3>
+                        <p id="personality-description" class="text-gray-700"></p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-2">日常建议</h3>
+                        <p id="daily-tips" class="text-gray-700"></p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">冥想建议</h3>
+                        <p id="meditation-tips" class="text-gray-700"></p>
+                    </div>
+                </div>
+                
+                <!-- 雷达图 -->
+                <div class="card mb-8 fade-in" style="animation-delay: 0.2s">
+                    <h3 class="text-lg font-semibold mb-4 text-center">ASFR 四大维度</h3>
+                    <div class="w-full h-64">
+                        <canvas id="radar-chart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">觉察力 (A)</p>
+                            <p id="awareness-score" class="text-lg font-semibold"></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">稳定力 (S)</p>
+                            <p id="stability-score" class="text-lg font-semibold"></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">专注力 (F)</p>
+                            <p id="focus-score" class="text-lg font-semibold"></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">还原力 (R)</p>
+                            <p id="restoration-score" class="text-lg font-semibold"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 历史趋势图 -->
+                <div class="card mb-8 fade-in" style="animation-delay: 0.4s">
+                    <h3 class="text-lg font-semibold mb-4 text-center">历史总分趋势</h3>
+                    <div class="w-full h-48">
+                        <canvas id="history-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- ASFR四大维度 -->
+                <div class="card mb-8 fade-in" style="animation-delay: 0.5s">
+                    <h3 class="text-lg font-semibold mb-4 text-center">ASFR 四大维度</h3>
+                    <div class="text-center mb-6">
+                        <p class="text-sm text-gray-600 mb-2">ASFR是评估精神体质的四个核心维度</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-blue-700 mb-2">觉察力 (A)</h4>
+                            <p class="text-sm text-gray-700">对自身情绪、思维和身体感受的感知能力，是自我认知的基础。</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-green-700 mb-2">稳定力 (S)</h4>
+                            <p class="text-sm text-gray-700">情绪调节和保持内心平静的能力，面对压力时的心理韧性。</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-yellow-700 mb-2">专注力 (F)</h4>
+                            <p class="text-sm text-gray-700">集中注意力和保持专注的能力，不受干扰地完成任务的能力。</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-purple-700 mb-2">还原力 (R)</h4>
+                            <p class="text-sm text-gray-700">从疲劳、压力中恢复的能力，自我修复和能量再生的能力。</p>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="inline-flex flex-wrap justify-center gap-3 mb-4">
+                            <!-- 等级标签将在这里动态生成 -->
+                            <div id="level-tags" class="flex justify-center gap-3 mb-4">
+                                <!-- 等级标签将在这里动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 本次测评进步 -->
+                <div id="progress-comparison" class="card mb-8 fade-in" style="animation-delay: 0.6s; display: none;">
+                    <h3 class="text-lg font-semibold mb-4 text-center">本次测评情况</h3>
+                    <div id="progress-indicators" class="flex justify-center gap-4 mb-4">
+                        <!-- 进步指标将在这里动态生成 -->
+                    </div>
+                    <p id="progress-comment" class="text-gray-700 text-center">注意休息和调整，有时候退步是进步的一部分。</p>
+                </div>
+                
+
+                
+                <!-- 专属冥想训练处方 -->
+                <div class="card mb-8 fade-in" style="animation-delay: 0.6s">
+                    <h3 class="text-lg font-semibold mb-4 text-center">专属冥想训练处方</h3>
+                    <div id="meditation-prescription" class="space-y-3">
+                        <!-- 处方内容将在这里动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 成长阶梯路径 -->
+                <div class="card mb-8 fade-in" style="animation-delay: 0.7s">
+                    <h3 class="text-lg font-semibold mb-4 text-center">成长阶梯路径</h3>
+                    <div id="growth-path" class="text-center space-y-3">
+                        <!-- 路径内容将在这里动态生成 -->
+                    </div>
+                </div>
+                
+
+                
+                <!-- 分享按钮 -->
+                <div class="mb-8 fade-in" style="animation-delay: 0.6s">
+                    <div class="card mb-4">
+                        <h3 class="text-lg font-semibold mb-4 text-center">分享文案</h3>
+                        <p id="share-text" class="text-gray-700 text-center mb-4"></p>
+                        <button id="copy-share" class="btn-primary w-full">
+                            <i class="fa fa-copy mr-2"></i> 复制分享语
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 重新测试按钮 -->
+                <div class="text-center fade-in" style="animation-delay: 0.8s">
+                    <button id="retake-test" class="btn-secondary">
+                        <i class="fa fa-refresh mr-2"></i> 重新测试
+                    </button>
+                </div>
+                
+                <p class="text-xs text-gray-400 mt-8 text-center">本量表为冥想训练自评工具，仅用于成长追踪<br>不替代专业心理/医疗诊断</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 问题数据
+        const questions = [
+            // 觉察力 A
+            { text: "我心里一有点不爽，自己马上就能察觉到。", dimension: "A" },
+            { text: "我一发呆跑神，脑子里会立刻 \"叮\" 一下意识到。", dimension: "A" },
+            { text: "我分得清「有点小情绪」和「情绪把我整个人带走了」。", dimension: "A" },
+            { text: "我一紧张，就能感觉到身体哪里发紧、发酸、不对劲。", dimension: "A" },
+            { text: "我一乱，呼吸变快变慢，自己都能明显察觉。", dimension: "A" },
+            { text: "我一开始胡思乱想内耗，马上就能意识到 \"我又飘了\"。", dimension: "A" },
+            
+            // 稳定力 S
+            { text: "突然出状况时，我不会当场炸掉，能先稳住。", dimension: "S" },
+            { text: "别人情绪再冲、再抱怨，我也不容易被带跑偏。", dimension: "S" },
+            { text: "火气上来时，我能先停一下，不会脱口而出伤人话。", dimension: "S" },
+            { text: "我的情绪整体很稳，不会大起大落像过山车。", dimension: "S" },
+            { text: "别人开不开心、情绪藏没藏，我一眼能感觉出来。", dimension: "S" },
+            { text: "别人炸毛时，我会先顺毛安抚，而不是跟着吵。", dimension: "S" },
+            
+            // 专注力 F
+            { text: "我做一件事时，能沉进去一阵子，不轻易被念头带飞。", dimension: "F" },
+            { text: "我能管住自己不随手刷手机、不东想西想浪费时间。", dimension: "F" },
+            { text: "注意力一跑神，我能很快拉回来，不陷在内耗里。", dimension: "F" },
+            { text: "我专心做事时，小事很难打断我。", dimension: "F" },
+            { text: "就算心情很差，我也能理性把该做的事做完。", dimension: "F" },
+            { text: "面对选择时我不纠结内耗，能干脆拍板。", dimension: "F" },
+            
+            // 还原力 R
+            { text: "累到透支后，我歇一会儿就能快速回血。", dimension: "R" },
+            { text: "我不容易长期陷在低落、疲惫、心累里走不出来。", dimension: "R" },
+            { text: "压力一大，我能很快把自己放松下来。", dimension: "R" },
+            { text: "睡前我能卸掉一天的紧绷，不带着情绪入睡。", dimension: "R" },
+            { text: "我入睡很顺，睡得沉，不容易半夜醒。", dimension: "R" },
+            { text: "睡醒后我是真的缓过来了，白天不容易蔫。", dimension: "R" }
+        ];
+
+        // 冥想训练处方数据
+        const meditationPrescriptions = {
+            "ASFR": {
+                name: "核心稳定冥想",
+                duration: "20分钟/次",
+                method: "坐姿舒适，专注呼吸，当念头出现时温和带回，保持中正稳定的状态",
+                frequency: "每日1次，最佳时间：早晨起床后"
+            },
+            "ASFr": {
+                name: "能量回春冥想",
+                duration: "15分钟/次",
+                method: "仰卧放松，从脚趾开始逐步放松全身，想象金色能量充满全身",
+                frequency: "每日2次，最佳时间：中午12点，傍晚6点"
+            },
+            "ASfR": {
+                name: "专注收束冥想",
+                duration: "12分钟/次",
+                method: "选择一个焦点（呼吸或声音），注意力分散时轻柔拉回，不评判",
+                frequency: "每日1次，最佳时间：工作前"
+            },
+            "ASfr": {
+                name: "基础觉察锚定",
+                duration: "10分钟/次",
+                method: "自然坐姿，观察呼吸进出，感受身体 sensations，建立基础觉察",
+                frequency: "每日1次，最佳时间：睡前"
+            },
+            "AsFR": {
+                name: "深度放松修复",
+                duration: "25分钟/次",
+                method: "渐进式肌肉放松，配合深呼吸，释放深层紧绷和压力",
+                frequency: "每日1次，最佳时间：晚上8点"
+            },
+            "AsFr": {
+                name: "情绪接纳转化",
+                duration: "18分钟/次",
+                method: "识别情绪，给情绪命名，观察情绪在身体中的表现，接纳不抗拒",
+                frequency: "每日1次，最佳时间：情绪波动时"
+            },
+            "AsfR": {
+                name: "松弛专注训练",
+                duration: "8分钟/次",
+                method: "轻松坐姿，注意力放在呼吸上，允许思绪自由流动，保持温和关注",
+                frequency: "每日1次，最佳时间：下午3点"
+            },
+            "Asfr": {
+                name: "轻柔共情练习",
+                duration: "15分钟/次",
+                method: "慈悲冥想，先对自己，再对他人，培养温柔接纳的能力",
+                frequency: "每日1次，最佳时间：睡前"
+            },
+            "aSFR": {
+                name: "内在信号感知",
+                duration: "20分钟/次",
+                method: "身体扫描，从头顶到脚底，细致感受每寸肌肤的感受和信号",
+                frequency: "每日1次，最佳时间：早晨"
+            },
+            "aSFr": {
+                name: "工作减压重置",
+                duration: "15分钟/次",
+                method: "四方形呼吸法：吸气4秒-屏息4秒-呼气4秒-屏息4秒，重复",
+                frequency: "每日2次，最佳时间：工作间隙"
+            },
+            "aSfR": {
+                name: "选择定力培养",
+                duration: "10分钟/次",
+                method: "设定明确意图，专注当下选择，减少犹豫和纠结",
+                frequency: "每日1次，最佳时间：早晨"
+            },
+            "aSfr": {
+                name: "均衡成长冥想",
+                duration: "15分钟/次",
+                method: "平衡关注四大维度：觉察-稳定-专注-恢复，每个维度3-4分钟",
+                frequency: "每日1次，最佳时间：任意"
+            },
+            "asFR": {
+                name: "情绪标记识别",
+                duration: "18分钟/次",
+                method: "观察日常情绪变化，及时标记，建立情绪-身体反应的连接",
+                frequency: "每日1次，最佳时间：晚上"
+            },
+            "asFr": {
+                name: "深度释放修复",
+                duration: "30分钟/次",
+                method: "动态冥想，先通过动作释放情绪，再静坐整合，最后放松",
+                frequency: "每日1次，最佳时间：傍晚"
+            },
+            "asfR": {
+                name: "清醒仪式冥想",
+                duration: "10分钟/次",
+                method: "早晨起床后，静坐片刻，设定今日意图，清晰方向",
+                frequency: "每日1次，最佳时间：早晨"
+            },
+            "asfr": {
+                name: "入门呼吸觉察",
+                duration: "10分钟/次",
+                method: "最简单的呼吸观察，建立冥想习惯，不追求效果",
+                frequency: "每日1次，最佳时间：任意"
+            }
+        };
+
+        // 成长阶梯路径数据
+        const growthPaths = {
+            "ASFR": { nextType: "ASFR", nextTypeTitle: "定盘大佬", focusDimension: "保持平衡", message: "你已达到理想状态，继续保持即可" },
+            "ASFr": { nextType: "ASFR", nextTypeTitle: "定盘大佬", focusDimension: "提升还原力", message: "通过能量回春冥想提升恢复能力" },
+            "ASfR": { nextType: "ASFR", nextTypeTitle: "定盘大佬", focusDimension: "提升专注力", message: "通过专注收束冥想增强注意力" },
+            "ASfr": { nextType: "ASfR", nextTypeTitle: "心定飘哥", focusDimension: "提升专注力", message: "从基础觉察开始，逐步提升专注" },
+            "AsFR": { nextType: "ASFR", nextTypeTitle: "定盘大佬", focusDimension: "提升稳定力", message: "通过内在定锚冥想增强情绪稳定" },
+            "AsFr": { nextType: "AsFR", nextTypeTitle: "自愈卷王", focusDimension: "提升还原力", message: "重点练习深度放松和睡眠质量" },
+            "AsfR": { nextType: "AsFR", nextTypeTitle: "自愈卷王", focusDimension: "提升专注力", message: "在放松基础上培养专注能力" },
+            "Asfr": { nextType: "AsfR", nextTypeTitle: "佛系躺人", focusDimension: "提升还原力", message: "先建立安全感，再提升恢复力" },
+            "aSFR": { nextType: "ASFR", nextTypeTitle: "定盘大佬", focusDimension: "提升觉察力", message: "增强对内在信号的感知能力" },
+            "aSFr": { nextType: "aSFR", nextTypeTitle: "钝感铁牛", focusDimension: "提升还原力", message: "学会有效放松和恢复技巧" },
+            "aSfR": { nextType: "aSFR", nextTypeTitle: "钝感铁牛", focusDimension: "提升专注力", message: "培养目标感和持续专注能力" },
+            "aSfr": { nextType: "aSfR", nextTypeTitle: "钝感摆王", focusDimension: "均衡提升", message: "从基础开始，全面提升四大维度" },
+            "asFR": { nextType: "aSFR", nextTypeTitle: "钝感铁牛", focusDimension: "提升稳定力", message: "建立情绪稳定的基础能力" },
+            "asFr": { nextType: "asFR", nextTypeTitle: "懵圈卷王", focusDimension: "提升还原力", message: "学会有效休息和能量管理" },
+            "asfR": { nextType: "asFR", nextTypeTitle: "懵圈卷王", focusDimension: "提升专注力", message: "从短时间专注练习开始" },
+            "asfr": { nextType: "asfR", nextTypeTitle: "迷糊自愈人", focusDimension: "觉察力", message: "从最基础的自我觉察开始练习" }
+        };
+
+        // 人格类型数据
+        const personalityTypes = {
+            "ASFR": {
+                title: "定盘大佬",
+                subtitle: "core",
+                color: "blue",
+                description: "情绪稳、不内耗、能专注、恢复快，遇事从来不会慌，自带 \"定心 buff\"，走到哪都是别人的依靠。",
+                dailyTips: "你天生内核稳、觉察清、专注够、恢复快。日常保持规律作息、适度运动，少卷入他人内耗，多做让自己「平静又有意义」的事，守住节奏就会持续强大。",
+                meditationTips: "每周 2–3 次 内在定锚冥想 + 单焦点专注冥想，强化核心稳定，把天生优势变成长期能力；偶尔做 念头断舍，保持头脑清爽不被杂思干扰。",
+                image: "https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/2110acf9ac0c491e8a6c89b9772afa18~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440516&x-signature=oreIjJVA1MbFoPXc5%2Fpzvr%2B1Grc%3D"
+            },
+            "ASFr": {
+                title: "耗电战神",
+                subtitle: "volt",
+                color: "blue",
+                description: "做事狠、思路清、情绪稳，专注力拉满像战神，但消耗快、累了要缓更久，主打一个 \"专注但需养电\"。",
+                dailyTips: "你专注与稳定强，但容易过度投入、忘记休息。每工作 1.5 小时主动停 5 分钟，离开屏幕、拉伸肩颈；别硬扛疲劳，累了就短休，别等透支才恢复。",
+                meditationTips: "每天中午 / 傍晚做 5 分钟能量回春短冥想，快速回血；睡前必做 睡前卸压清脑冥想，避免白天压力累积，让恢复力跟上你的高强度。",
+                image: "https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e1a6323633a24e17b10e03658da625f6~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440514&x-signature=Lf2YaAVJFtbSNR0bd2zy5xkWU5c%3D"
+            },
+            "ASfR": {
+                title: "心定飘哥",
+                subtitle: "wave",
+                color: "blue",
+                description: "情绪稳、能自愈，心态超好，就是容易走神、思绪飘飞，偶尔 \"心稳但脑子不在状态\"。",
+                dailyTips: "你稳定与觉察好，但专注力容易散、做事易拖延。每天固定 2 段「无手机专注时段」（25–40 分钟），一次只做一件事，减少多任务。",
+                meditationTips: "每天练 单焦点专注冥想（呼吸 / 声音）10 分钟，训练注意力收束；走神时用 念头断舍 轻轻拉回，慢慢减少涣散，让稳定力带动专注。",
+                image: "https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/1faaef4d9b504c5abde6789e27dd6028~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440518&x-signature=L3uO7rVpbNMXMLA9%2BBXk6uFHSSc%3D"
+            },
+            "ASfr": {
+                title: "温和路人",
+                subtitle: "calm",
+                color: "blue",
+                description: "不炸毛、不急躁、不内耗，性格温和，就是专注力一般、恢复也慢，主打一个 \"平稳不折腾，普通但舒服\"。",
+                dailyTips: "你整体平稳、情绪温和，是很好的基础体质。日常多做温和活动（散步、瑜伽、喝茶），少熬夜、少强刺激，保持「不紧绷、不过劳」的状态。",
+                meditationTips: "从 基础呼吸觉察锚定（每天 5–10 分钟） 开始，温和提升觉察与专注；每周加 1 次 身体扫描觉察，全面了解自己身心状态，稳步变强。",
+                image: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/b68da48cd79c4448aa23ade4687c2c9b~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440513&x-signature=53uMsCorCLSOHqShCin5GEhJXp8%3D"
+            },
+            "AsFR": {
+                title: "自愈卷王",
+                subtitle: "heal",
+                color: "green",
+                description: "能觉察自己的情绪、专注力强，还能快速回血自愈，一边卷一边养身，敏感但不内耗，自愈力拉满。",
+                dailyTips: "你自愈力强、又能拼，但容易「一边卷一边自我修复」，隐性疲惫仍会累积。白天每小时做 1 分钟放松：耸肩→放松、深呼吸 3 次；晚上不把工作压力带上。",
+                meditationTips: "日常用 四方形呼吸法 稳住节奏；每周 2–3 次 深度身体放松冥想，释放深层紧绷；睡前 睡眠深化冥想，让自愈力真正落地到睡眠与恢复。",
+                image: "https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/b4c1a266e98548359363a2fcbfa945f4~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440537&x-signature=DP6mXe5dqL9t%2BZYgPf7%2FPZFYw0I%3D"
+            },
+            "AsFr": {
+                title: "死撑强人",
+                subtitle: "tough",
+                color: "green",
+                description: "感知强、做事拼，情绪容易被影响，但从来不会轻易放弃，硬撑着完成所有事，就是累了难回血。",
+                dailyTips: "你习惯硬扛、不示弱、情绪压抑，身体容易长期僵硬（肩颈 / 背 / 腰）。每天主动「示弱放松」：泡热水澡、按摩、平躺放空；不舒服别忍，及时休息。",
+                meditationTips: "重点练 身体扫描觉察 + 不评判接纳冥想，先看见紧绷与压抑，再允许自己放松；情绪上来时用 情绪标记，不再硬压，让稳定力慢慢建立。",
+                image: "https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/21a99e80f39043be9b3e3df6994678c3~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440541&x-signature=m5f1SsaOZcOhOLlAPNprLbBIxRk%3D"
+            },
+            "AsfR": {
+                title: "佛系躺人",
+                subtitle: "lazy",
+                color: "green",
+                description: "能快速回血、不钻牛角尖，情绪敏感但不内耗，主打一个 \"能躺就躺，躺完就满血，偶尔走神也无所谓\"。",
+                dailyTips: "你自愈好、心态佛，但动力弱、易躺平、专注力不足。每天给自己 1 个「小而必完成」的任务，不贪多、做到就好，慢慢找回专注感。",
+                meditationTips: "轻松练 松弛式单焦点冥想（每天 5–8 分钟），不强迫、不焦虑；配合 念头断舍，减少「想太多却不行动」的内耗，在佛系里长出一点定力。",
+                image: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/418c869f4a5f4d48ab66ff33bc7eb594~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440539&x-signature=tJXhVLEeV0oD28xyWHfx1%2FznxaE%3D"
+            },
+            "Asfr": {
+                title: "玻璃人",
+                subtitle: "frag",
+                color: "green",
+                description: "能清晰察觉自己的情绪，却稳不住，容易敏感内耗、累了缓不过来，像玻璃一样易碎，需要被温柔对待。",
+                dailyTips: "你敏感、易受影响、情绪波动大、恢复慢。少去嘈杂 / 冲突环境，多待在安静柔和的空间；多晒太阳、多走路，少刷负面信息，保护内在节奏。",
+                meditationTips: "每天 轻柔呼吸觉察 + 共情不卷入练习，守住情绪边界；累 / 低落时做 5 分钟能量回春冥想，不强迫自己「快点好」；用 不评判接纳 接纳敏感，慢慢建立安全感。",
+                image: "https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/fb0c13cf7aa1431abfe3881eb20113df~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440539&x-signature=hugbxs77tYPn3zK3%2FCVqFmg4xP0%3D"
+            },
+            "aSFR": {
+                title: "钝感铁牛",
+                subtitle: "hard",
+                color: "yellow",
+                description: "不敏感、不内耗，情绪稳、专注强、恢复快，像铁牛一样耐造，万事不慌，主打一个 \"钝感力拉满，抗造又靠谱\"。",
+                dailyTips: "你稳定、专注、恢复强，但对自身情绪 / 身体信号钝感，容易「没事人一样硬扛」。每天留 3 次「自我检查」：问自己「现在心情如何？身体哪里紧？」",
+                meditationTips: "重点练 情绪标记冥想 + 身体扫描觉察，提升对内在信号的敏感度；用 念头观察者 看见自己的惯性思维，在强大稳定中变得更细腻通透。",
+                image: "https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/1b878f60934e4673a10b6409a91ecd41~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440563&x-signature=RLg8RIZ3XwfgmwqVbGN2vOHwBzQ%3D"
+            },
+            "aSFr": {
+                title: "实干牛人",
+                subtitle: "work",
+                color: "yellow",
+                description: "情绪稳、做事干脆利落，务实不矫情，就是不太懂自己的内心，累了要缓更久，主打一个 \"实干派，不搞虚的\"。",
+                dailyTips: "你稳定、能扛事、执行力强，但长期高压、休息不足、容易「身体累但脑子停不下来」。每天固定「完全放空时段」（15–20 分钟），不看消息、不安排事。",
+                meditationTips: "中午 5-10 分钟深度放松 快速卸压；晚上 睡前卸压清脑冥想 切断工作思绪；用 四方形呼吸法 稳住日常节奏，不让实干透支恢复力。",
+                image: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0c2c57a47d48404eaf9a22d5888a4228~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440560&x-signature=59Nhx60sR7dj62Nkc424zv1vd8I%3D"
+            },
+            "aSfR": {
+                title: "钝感摆王",
+                subtitle: "free",
+                color: "yellow",
+                description: "情绪稳、能自愈，不敏感、不纠结，主打一个 \"钝感又松弛，怎么舒服怎么来，偶尔摆烂也无所谓\"。",
+                dailyTips: "你稳定、心态好、不爱内耗，但容易散漫、拖延、缺乏目标感。每周给自己 2–3 个「专注小目标」，一次只冲一个，保持摆烂但不废掉的平衡。",
+                meditationTips: "轻松练 呼吸觉察 + 单焦点短专注（每天 5 -10分钟）；用 选择定力冥想 减少纠结，在自由里慢慢建立一点专注与方向感。",
+                image: "https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/63895e46d93f4feb9e2b0611e29257dd~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440559&x-signature=fvV9paLvxe1qUoOVgedNznrklMw%3D"
+            },
+            "aSfr": {
+                title: "普通凡人",
+                subtitle: "norm",
+                color: "yellow",
+                description: "不敏感、不炸毛，没有特别突出的优势，也没有明显的短板，专注力一般、恢复也慢，就是最踏实的 \"人间普通人\"。",
+                dailyTips: "你各方面均衡、无明显短板、也无超强天赋。走「长期稳健路线」：规律作息、适度运动、少内耗、多积累，稳定就是最大优势。",
+                meditationTips: "基础呼吸觉察（每天 10 分钟） 全面提升 A/S/F/R；每周 1 次 身体扫描、1 次 放松练习，均衡成长，慢慢变成更稳、更专注、更能恢复的状态。",
+                image: "https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/b7a0631ad32b482abc77b42ae3867689~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440560&x-signature=KdPdBQFPgRjcWNt9cTf354t4LmM%3D"
+            },
+            "asFR": {
+                title: "懵圈卷王",
+                subtitle: "late",
+                color: "purple",
+                description: "做事专注、恢复快，能默默努力卷起来，但看不清自己的情绪、容易被带偏，懵懵懂懂却很能拼，潜力股本股。",
+                dailyTips: "你努力、能拼、恢复不错，但觉察弱、后知后觉、经常内耗完才发现。做事前先停 1 分钟「问自己：我现在状态对吗？真的想做吗？」",
+                meditationTips: "每天 情绪标记冥想 + 念头观察者，提升自我觉察；用 冰人呼吸法 减少冲动与后悔；先看清自己，再努力才不盲目内耗。",
+                image: "https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/1faae45ab4934e90925ee316bc74840b~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440585&x-signature=zniP%2BLJNJODxd9XYq7kXkieo4Hc%3D"
+            },
+            "asFr": {
+                title: "闷耕强人",
+                subtitle: "grind",
+                color: "purple",
+                description: "做事拼、能专注，默默努力不张扬，却不懂自己的情绪，累了难回血，悄悄努力，待爆发的强人。",
+                dailyTips: "你吃苦、执行力强，但觉察差、稳定弱、恢复慢、长期紧绷。每天「强制放松」2 次：平躺 10 分钟、拉伸、深呼吸，别等身体抗议才停。",
+                meditationTips: "重点 身体扫描觉察 + 深度身体放松冥想，释放长期紧绷；用 内在定锚冥想 提升稳定力；睡前 睡眠深化冥想 改善恢复质量，让努力更可持续。",
+                image: "https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/641c2979bcaa48888438a0d862dcd6f8~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440584&x-signature=tupeU%2BJG2Te5cXW5bV9wzsIQC6Y%3D"
+            },
+            "asfR": {
+                title: "迷糊自愈人",
+                subtitle: "lost",
+                color: "purple",
+                description: "不太懂自己的情绪、容易走神，却天生能回血，自愈力强，懵懵懂懂、迷迷糊糊，但练一练就能快速成长。",
+                dailyTips: "你心态好、自愈力不错，但觉察弱、专注散、容易迷糊、没方向。每天固定「清醒小仪式」：早晨静坐 5 分钟、列 3 件要事，减少浑浑噩噩。",
+                meditationTips: "从 呼吸觉察锚定（每天 5 分钟） 入门，借自愈力快速建立习惯；用 念头断舍 减少胡思乱想；慢慢清晰自我、减少迷糊，让自愈力配上方向。",
+                image: "https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/a7830b45c11c4df8bd61515ecbb827af~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604221701363B86EBBCCFC60B519E89&rrcfp=f06b921b&x-expires=1779440583&x-signature=vd387XRqqSl1p9qSiDZAxvGiQVg%3D"
+            },
+            "asfr": {
+                title: "原石新人",
+                subtitle: "bud",
+                color: "purple",
+                description: "情绪易波动、易内耗、难专注，像一块未被打磨的原石，看似普通，却可塑性极强，只要开始训练，就能快速逆袭。",
+                dailyTips: "你整体偏弱、易累、易受影响、容易内耗，但潜力大、可塑性强。从「最小行动」开始：不熬夜、少刷手机、每天散步、多接触自然，打好身心基础。",
+                meditationTips: "从 入门呼吸觉察（每天 3–5 分钟） 开始，温和不强迫；每周 1–2 次 轻柔放松冥想，建立安全感与放松感；像打磨原石一样，慢慢长出觉察、稳定、专注、恢复。",
+                image: "https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e6d4f24d15ad4d12bed0fc5a9ce79daf~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260422171357D278FF508C79EE5F3234&rrcfp=f06b921b&x-expires=1779441305&x-signature=pNEVyxsP99WV9qWtZE2%2FoM3OZJY%3D"
+            }
+        };
+
+        // DOM 元素
+        const coverPage = document.getElementById('cover-page');
+        const questionPage = document.getElementById('question-page');
+        const loadingPage = document.getElementById('loading-page');
+        const resultPage = document.getElementById('result-page');
+        
+        const startTestBtn = document.getElementById('start-test');
+        const prevQuestionBtn = document.getElementById('prev-question');
+        const nextQuestionBtn = document.getElementById('next-question');
+        const retakeTestBtn = document.getElementById('retake-test');
+        const copyShareBtn = document.getElementById('copy-share');
+        
+        const questionText = document.getElementById('question-text');
+        const currentQuestionSpan = document.getElementById('current-question');
+        const progressPercentageSpan = document.getElementById('progress-percentage');
+        const progressFill = document.getElementById('progress-fill');
+        
+        const scoreButtons = document.querySelectorAll('.btn-score');
+        
+        // 应用状态
+        let currentQuestion = 0;
+        const answers = new Array(questions.length).fill(null);
+        let radarChart = null;
+        let historyChart = null;
+
+        // 初始化应用
+        function init() {
+            // 加载历史记录
+            loadHistory();
+            
+            // 绑定事件
+            startTestBtn.addEventListener('click', startTest);
+            prevQuestionBtn.addEventListener('click', goToPrevQuestion);
+            nextQuestionBtn.addEventListener('click', goToNextQuestion);
+            retakeTestBtn.addEventListener('click', retakeTest);
+            copyShareBtn.addEventListener('click', copyShareText);
+            
+            scoreButtons.forEach(button => {
+                button.addEventListener('click', () => selectScore(parseInt(button.dataset.score)));
+            });
+        }
+
+        // 开始测试
+        function startTest() {
+            coverPage.classList.add('hidden');
+            questionPage.classList.remove('hidden');
+            showQuestion(0);
+        }
+
+        // 显示问题
+        function showQuestion(index) {
+            currentQuestion = index;
+            const question = questions[index];
+            
+            // 维度标签已隐藏，不再更新
+            
+            questionText.textContent = question.text;
+            currentQuestionSpan.textContent = index + 1;
+            
+            const progress = Math.round(((index + 1) / questions.length) * 100);
+            progressPercentageSpan.textContent = `${progress}%`;
+            progressFill.style.width = `${progress}%`;
+            
+            // 更新按钮状态
+            prevQuestionBtn.disabled = index === 0;
+            prevQuestionBtn.classList.toggle('opacity-50', index === 0);
+            prevQuestionBtn.classList.toggle('cursor-not-allowed', index === 0);
+            
+            nextQuestionBtn.disabled = answers[index] === null;
+            nextQuestionBtn.classList.toggle('opacity-50', answers[index] === null);
+            nextQuestionBtn.classList.toggle('cursor-not-allowed', answers[index] === null);
+            
+            // 更新分数按钮状态
+            scoreButtons.forEach(button => {
+                const score = parseInt(button.dataset.score);
+                button.classList.toggle('active', answers[index] === score);
+            });
+        }
+
+        // 选择分数
+        function selectScore(score) {
+            answers[currentQuestion] = score;
+            
+            // 更新按钮状态
+            scoreButtons.forEach(button => {
+                button.classList.toggle('active', parseInt(button.dataset.score) === score);
+            });
+            
+            nextQuestionBtn.disabled = false;
+            nextQuestionBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // 如果是最后一题，直接计算结果
+            if (currentQuestion === questions.length - 1) {
+                setTimeout(() => {
+                    calculateResult();
+                }, 500);
+            }
+        }
+
+        // 上一题
+        function goToPrevQuestion() {
+            if (currentQuestion > 0) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        // 下一题
+        function goToNextQuestion() {
+            if (currentQuestion < questions.length - 1 && answers[currentQuestion] !== null) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+
+        // 计算结果
+        function calculateResult() {
+            questionPage.classList.add('hidden');
+            loadingPage.classList.remove('hidden');
+            
+            // 计算各维度平均分
+            const dimensions = { A: 0, S: 0, F: 0, R: 0 };
+            const counts = { A: 0, S: 0, F: 0, R: 0 };
+            
+            questions.forEach((question, index) => {
+                const dim = question.dimension;
+                dimensions[dim] += answers[index];
+                counts[dim]++;
+            });
+            
+            const averages = {
+                A: dimensions.A / counts.A,
+                S: dimensions.S / counts.S,
+                F: dimensions.F / counts.F,
+                R: dimensions.R / counts.R
+            };
+            
+            // 生成人格类型代码
+            let typeCode = '';
+            typeCode += averages.A >= 2.5 ? 'A' : 'a';
+            typeCode += averages.S >= 2.5 ? 'S' : 's';
+            typeCode += averages.F >= 2.5 ? 'F' : 'f';
+            typeCode += averages.R >= 2.5 ? 'R' : 'r';
+            
+            // 计算总分
+            const totalScore = answers.reduce((sum, score) => sum + score, 0);
+            
+            // 保存历史记录
+            saveHistory({
+                date: new Date().toISOString(),
+                scores: { ...averages },
+                totalScore,
+                typeCode
+            });
+            
+            // 延迟显示结果，增加期待感
+            setTimeout(() => {
+                showResult(typeCode, averages, totalScore);
+            }, 2000);
+        }
+
+        // 计算维度等级
+        function calculateLevel(score) {
+            if (score >= 3.5) return { level: 'Lv4', text: '卓越', color: 'bg-green-500' };
+            if (score >= 2.5) return { level: 'Lv3', text: '良好', color: 'bg-blue-500' };
+            if (score >= 1.5) return { level: 'Lv2', text: '一般', color: 'bg-yellow-500' };
+            return { level: 'Lv1', text: '薄弱', color: 'bg-red-500' };
+        }
+        
+        // 显示结果
+        function showResult(typeCode, averages, totalScore) {
+            loadingPage.classList.add('hidden');
+            resultPage.classList.remove('hidden');
+            
+            const personality = personalityTypes[typeCode];
+            
+            // 设置结果卡片
+            document.getElementById('personality-image').src = personality.image;
+            document.getElementById('personality-title').textContent = personality.title;
+            document.getElementById('personality-subtitle').textContent = personality.subtitle;
+            document.getElementById('personality-description').textContent = personality.description;
+            document.getElementById('daily-tips').textContent = personality.dailyTips;
+            document.getElementById('meditation-tips').textContent = personality.meditationTips;
+            
+            // 设置维度分数
+            document.getElementById('awareness-score').textContent = averages.A.toFixed(1);
+            document.getElementById('stability-score').textContent = averages.S.toFixed(1);
+            document.getElementById('focus-score').textContent = averages.F.toFixed(1);
+            document.getElementById('restoration-score').textContent = averages.R.toFixed(1);
+            
+            // 1. 显示ASFR四维度等级
+            displayDimensionLevels(averages);
+            
+            // 2. 显示专属冥想训练处方
+            displayMeditationPrescription(typeCode);
+            
+            // 3. 显示成长阶梯路径
+            displayGrowthPath(typeCode, personality.title);
+            
+            // 4. 显示复测进步对比
+            displayProgressComparison(averages);
+            
+            // 设置分享文案
+            const shareTexts = [
+                `我的精神体质：${personality.title}，快来测测你是哪一种～`,
+                `精神健身自测｜解锁我的专属精神人设：${personality.title}！`,
+                `不内耗、不焦虑，我的精神体质是 ${personality.title} ✨`
+            ];
+            const randomShareText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
+            document.getElementById('share-text').textContent = randomShareText;
+            
+            // 创建雷达图
+            createRadarChart(averages);
+            
+            // 创建历史趋势图
+            createHistoryChart();
+        }
+        
+        // 显示维度等级
+        function displayDimensionLevels(averages) {
+            const dimensions = [
+                { key: 'A', name: '觉察力', score: averages.A },
+                { key: 'S', name: '稳定力', score: averages.S },
+                { key: 'F', name: '专注力', score: averages.F },
+                { key: 'R', name: '还原力', score: averages.R }
+            ];
+            
+            // 清空容器
+            document.getElementById('level-tags').innerHTML = '';
+            
+            dimensions.forEach(dim => {
+                const level = calculateLevel(dim.score);
+                
+                // 创建等级标签
+                const tag = document.createElement('div');
+                tag.className = `${level.color} text-white px-3 py-1 rounded-full text-sm font-medium`;
+                tag.textContent = `${dim.name} ${level.level}`;
+                document.getElementById('level-tags').appendChild(tag);
+                
+                // 设置等级文本
+                const levelElement = document.getElementById(`${dim.name.toLowerCase()}-level`);
+                if (levelElement) {
+                    levelElement.textContent = `${level.level} ${level.text}`;
+                    levelElement.className = `text-lg font-semibold ${level.color.replace('bg-', 'text-')}`;
+                }
+            });
+        }
+        
+        // 显示冥想训练处方
+        function displayMeditationPrescription(typeCode) {
+            const prescription = meditationPrescriptions[typeCode];
+            const container = document.getElementById('meditation-prescription');
+            
+            container.innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="font-semibold text-gray-800">练习名称：${prescription.name}</p>
+                    <p class="text-gray-700">时长：${prescription.duration}</p>
+                    <p class="text-gray-700">练习方法：${prescription.method}</p>
+                    <p class="text-gray-700">每日频率：${prescription.frequency}</p>
+                </div>
+            `;
+        }
+        
+        // 显示成长阶梯路径
+        function displayGrowthPath(typeCode, currentTitle) {
+            const path = growthPaths[typeCode];
+            const container = document.getElementById('growth-path');
+            
+            container.innerHTML = `
+                <div class="flex items-center justify-center gap-4 mb-3">
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-2">
+                            <span class="text-lg font-bold">现在</span>
+                        </div>
+                        <p class="text-sm">${currentTitle}</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2">
+                            <span class="text-lg font-bold">下一阶</span>
+                        </div>
+                        <p class="text-sm">${path.nextTypeTitle}</p>
+                    </div>
+                </div>
+                <p class="text-gray-700">提升重点：<span class="font-semibold">${path.focusDimension}</span></p>
+                <p class="text-gray-600 text-sm">${path.message}</p>
+            `;
+        }
+        
+        // 显示复测进步对比
+        function displayProgressComparison(currentScores) {
+            const history = getHistory();
+            const container = document.getElementById('progress-comparison');
+            const indicators = document.getElementById('progress-indicators');
+            const comment = document.getElementById('progress-comment');
+            
+            // 如果没有历史记录或只有一次测试，隐藏对比
+            if (history.length < 2) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            // 获取上一次的分数
+            const previousRecord = history[history.length - 2];
+            const previousScores = previousRecord.scores;
+            
+            // 计算进步情况
+            const progress = {
+                A: currentScores.A - previousScores.A,
+                S: currentScores.S - previousScores.S,
+                F: currentScores.F - previousScores.F,
+                R: currentScores.R - previousScores.R
+            };
+            
+            // 生成进步指标
+            indicators.innerHTML = '';
+            const dimensions = [
+                { key: 'A', name: '觉察' },
+                { key: 'S', name: '稳定' },
+                { key: 'F', name: '专注' },
+                { key: 'R', name: '还原' }
+            ];
+            
+            dimensions.forEach(dim => {
+                const change = progress[dim.key];
+                let symbol, color, text;
+                
+                if (change > 0.3) {
+                    symbol = '↑';
+                    color = 'text-green-500';
+                    text = '显著提升';
+                } else if (change > 0) {
+                    symbol = '↑';
+                    color = 'text-green-400';
+                    text = '有所提升';
+                } else if (change < -0.3) {
+                    symbol = '↓';
+                    color = 'text-red-500';
+                    text = '明显下降';
+                } else if (change < 0) {
+                    symbol = '↓';
+                    color = 'text-red-400';
+                    text = '略有下降';
+                } else {
+                    symbol = '→';
+                    color = 'text-gray-500';
+                    text = '保持稳定';
+                }
+                
+                const indicator = document.createElement('div');
+                indicator.className = 'text-center';
+                indicator.innerHTML = `
+                    <p class="text-sm text-gray-500">${dim.name}</p>
+                    <p class="text-xl font-bold ${color}">${symbol}</p>
+                    <p class="text-xs text-gray-600">${text}</p>
+                `;
+                indicators.appendChild(indicator);
+            });
+            
+            // 生成进步评语
+            const totalChange = Object.values(progress).reduce((sum, val) => sum + val, 0);
+            if (totalChange > 1) {
+                comment.textContent = '太棒了！你在冥想训练中取得了显著进步，继续保持！';
+            } else if (totalChange > 0) {
+                comment.textContent = '不错的进步！坚持练习会带来更大的改变。';
+            } else if (totalChange < -1) {
+                comment.textContent = '注意休息和调整，有时候退步是进步的一部分。';
+            } else {
+                comment.textContent = '保持稳定也是一种进步，继续保持练习。';
+            }
+            
+            container.style.display = 'block';
+        }
+
+        // 创建雷达图
+        function createRadarChart(averages) {
+            const ctx = document.getElementById('radar-chart').getContext('2d');
+            
+            if (radarChart) {
+                radarChart.destroy();
+            }
+            
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['觉察力', '稳定力', '专注力', '还原力'],
+                    datasets: [{
+                        label: '得分',
+                        data: [averages.A, averages.S, averages.F, averages.R],
+                        backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        pointBackgroundColor: 'rgba(156, 163, 175, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(156, 163, 175, 1)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 创建历史趋势图
+        function createHistoryChart() {
+            const ctx = document.getElementById('history-chart').getContext('2d');
+            const history = getHistory();
+            
+            if (historyChart) {
+                historyChart.destroy();
+            }
+            
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: history.map(record => {
+                        const date = new Date(record.date);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }),
+                    datasets: [{
+                        label: '总分',
+                        data: history.map(record => record.totalScore),
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 96,
+                            ticks: {
+                                stepSize: 24
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 复制分享文案
+        function copyShareText() {
+            const shareText = document.getElementById('share-text').textContent;
+            
+            navigator.clipboard.writeText(shareText).then(() => {
+                // 显示复制成功提示
+                const originalText = copyShareBtn.innerHTML;
+                copyShareBtn.innerHTML = '<i class="fa fa-check mr-2"></i> 复制成功';
+                copyShareBtn.classList.add('bg-green-500');
+                copyShareBtn.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                
+                setTimeout(() => {
+                    copyShareBtn.innerHTML = originalText;
+                    copyShareBtn.classList.remove('bg-green-500');
+                    copyShareBtn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                }, 2000);
+            });
+        }
+
+        // 重新测试
+        function retakeTest() {
+            // 重置答案
+            answers.fill(null);
+            
+            // 返回封面页
+            resultPage.classList.add('hidden');
+            coverPage.classList.remove('hidden');
+        }
+
+        // 保存历史记录
+        function saveHistory(record) {
+            let history = getHistory();
+            history.push(record);
+            
+            // 只保留最近10条记录
+            if (history.length > 10) {
+                history = history.slice(-10);
+            }
+            
+            localStorage.setItem('mocici-history', JSON.stringify(history));
+        }
+
+        // 获取历史记录
+        function getHistory() {
+            const history = localStorage.getItem('mocici-history');
+            return history ? JSON.parse(history) : [];
+        }
+
+        // 加载历史记录
+        function loadHistory() {
+            const history = getHistory();
+            // 可以在这里添加历史记录的初始化逻辑
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+</body></html>
